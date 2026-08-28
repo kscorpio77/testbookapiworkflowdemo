@@ -1,16 +1,15 @@
 ---
-
 name: fix-jira-defect
-description: >
-Diagnose and fix a software defect for the Book REST API by reading the Jira
+description: 'Diagnose and fix a software defect for the Book REST API by reading the Jira
 defect using Jira MCP, reading any linked Confluence pages for additional
 requirements, architecture guidance, API behaviour, or technical context,
 analysing the existing codebase, identifying the root cause, implementing
 the smallest safe fix, adding or updating tests, running verification,
 creating a Git branch, committing the fix, pushing the branch, and creating
 a pull request. Use this skill whenever the user asks to fix, investigate,
-debug, resolve, or work on a Jira Bug or defect.
-------------------------------------------------
+debug, resolve, or work on a Jira Bug or defect.'
+---
+
 
 # Fix Jira Defect
 

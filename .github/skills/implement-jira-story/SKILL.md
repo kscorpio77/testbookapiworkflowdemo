@@ -1,8 +1,6 @@
 ---
-
 name: implement-jira-story
-description: >
-Implement a Jira user story or new feature for the Book REST API by reading
+description: 'Implement a Jira user story or new feature for the Book REST API by reading
 the Jira issue using Jira MCP, reading every relevant Confluence page linked
 from the Jira story for detailed requirements, architecture guidance, API
 behaviour, design decisions, or testing expectations, analysing the existing
@@ -10,8 +8,8 @@ repository, planning and implementing the smallest suitable change, adding
 automated tests, running verification, creating a Git feature branch,
 committing the implementation, pushing the branch, and creating a pull
 request. Use this skill whenever the user asks to implement, develop, build,
-complete, or work on a Jira Story or new feature.
--------------------------------------------------
+complete, or work on a Jira Story or new feature'
+---
 
 # Implement Jira Story
 
