@@ -51,8 +51,8 @@ It also includes a **Postman collection** to help you quickly test the endpoints
 
 1. **Clone the Repository**
    ```bash
-   git clone https://github.com/sahandilshan/spring-boot-rest-api-demo.git
-   cd spring-boot-rest-api-demo
+   git clone https://github.com/kscorpio77/spring-boot-book-api-demo.git
+   cd spring-boot-book-api-demo
    ```
 2. Run MySQL in Docker (Optional) If you don’t have MySQL installed locally, spin up a container:
    ```bash
@@ -120,5 +120,4 @@ spring-boot-rest-api-demo
 * **Author:** Kundan Sharma
 * **Blog Post:** For a detailed walkthrough of this project, check out the blog post explaining the setup, structure, and how each class works. 
 * **Contributions:** Feel free to fork this repo, open issues, or submit pull requests!
-
 
