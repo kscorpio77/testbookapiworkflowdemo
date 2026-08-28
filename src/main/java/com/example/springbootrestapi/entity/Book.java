@@ -6,6 +6,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.Positive;
 
 @Entity
 @Table(name = "books")
@@ -17,6 +18,8 @@ public class Book {
 
     private String title;
     private String author;
+    
+    @Positive(message = "price must be greater than 0")
     private Double price;
 
     public Book() {
