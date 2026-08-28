@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -19,6 +20,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/books")
+@Validated
 public class BookController {
 
     private static final Logger logger = LoggerFactory.getLogger(BookController.class);
@@ -28,7 +30,7 @@ public class BookController {
 
     // Create or update
     @PostMapping
-    public ResponseEntity<Book> createBook(@RequestBody Book book) {
+    public ResponseEntity<Book> createBook(@RequestBody @jakarta.validation.Valid Book book) {
         Book savedBook = bookService.saveBook(book);
         return ResponseEntity.ok(savedBook);
     }
@@ -50,7 +52,7 @@ public class BookController {
 
     // Update
     @PutMapping("/{id}")
-    public ResponseEntity<Book> updateBook(@PathVariable Long id, @RequestBody Book newBookData) {
+    public ResponseEntity<Book> updateBook(@PathVariable Long id, @RequestBody @jakarta.validation.Valid Book newBookData) {
 
         return bookService.getBookById(id)
                 .map(book -> {
