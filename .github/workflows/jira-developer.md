@@ -8,6 +8,10 @@ on:
 
 engine: copilot
 
+network:
+  allowed:
+    - defaults
+    - java
 permissions:
   contents: read
   pull-requests: read
