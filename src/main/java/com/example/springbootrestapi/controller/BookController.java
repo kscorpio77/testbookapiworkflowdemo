@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -39,6 +40,16 @@ public class BookController {
     @GetMapping
     public ResponseEntity<List<Book>> getAllBooks() {
         List<Book> books = bookService.getAllBooks();
+        return ResponseEntity.ok(books);
+    }
+
+    // Search books by partial, case-insensitive title match
+    @GetMapping("/search")
+    public ResponseEntity<?> searchBooksByTitle(@RequestParam(required = false) String title) {
+        if (title == null || title.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("title must not be empty");
+        }
+        List<Book> books = bookService.searchBooksByTitle(title);
         return ResponseEntity.ok(books);
     }
 
