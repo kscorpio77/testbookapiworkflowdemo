@@ -51,6 +51,13 @@ public class BookController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    // Read: Search books by author (case-insensitive)
+    @GetMapping("/author/{author}")
+    public ResponseEntity<List<Book>> getBooksByAuthor(@PathVariable String author) {
+        List<Book> books = bookService.getBooksByAuthor(author);
+        return ResponseEntity.ok(books);
+    }
+
     // Update
     @PutMapping("/{id}")
     public ResponseEntity<Book> updateBook(@PathVariable Long id, @RequestBody @jakarta.validation.Valid Book newBookData) {

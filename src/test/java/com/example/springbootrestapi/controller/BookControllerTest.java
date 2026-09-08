@@ -10,12 +10,15 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -83,5 +86,30 @@ class BookControllerTest {
                 .andExpect(jsonPath("$.errors.price").value("price must be greater than 0"));
 
         verify(bookService, never()).saveBook(any(Book.class));
+    }
+
+    @Test
+    void getBooksByAuthorReturnsMatchingBooks() throws Exception {
+        Book book = new Book("Clean Code", "Robert Martin", 25.0);
+        when(bookService.getBooksByAuthor(anyString())).thenReturn(List.of(book));
+
+        mockMvc.perform(get("/api/books/author/robert martin"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].author").value("Robert Martin"))
+                .andExpect(jsonPath("$[0].title").value("Clean Code"));
+
+        verify(bookService).getBooksByAuthor("robert martin");
+    }
+
+    @Test
+    void getBooksByAuthorReturnsEmptyListWhenNoMatch() throws Exception {
+        when(bookService.getBooksByAuthor(anyString())).thenReturn(List.of());
+
+        mockMvc.perform(get("/api/books/author/unknown"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$").isEmpty());
+
+        verify(bookService).getBooksByAuthor("unknown");
     }
 }

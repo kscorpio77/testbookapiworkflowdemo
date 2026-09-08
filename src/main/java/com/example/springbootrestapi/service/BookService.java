@@ -41,4 +41,9 @@ public class BookService {
     public void deleteBook(Long id) {
         bookRepository.deleteById(id);
     }
+
+    // Read: Search books by author (case-insensitive)
+    public List<Book> getBooksByAuthor(String author) {
+        return bookRepository.findByAuthorIgnoreCase(author);
+    }
 }
