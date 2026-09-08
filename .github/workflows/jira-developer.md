@@ -4,7 +4,8 @@ description: "Implement one copilot-ready Jira story and create a pull request"
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 9 * * *"
+    - cron: "0 8 * * *"
+      timezone: "Europe/London"
 
 engine: copilot
 
