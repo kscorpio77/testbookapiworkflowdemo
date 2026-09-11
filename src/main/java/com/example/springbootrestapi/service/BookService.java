@@ -41,4 +41,12 @@ public class BookService {
     public void deleteBook(Long id) {
         bookRepository.deleteById(id);
     }
+
+    // Search: Find books whose title contains the given text (case-insensitive, partial match)
+    public List<Book> searchBooksByTitle(String title) {
+        if (title == null || title.trim().isEmpty()) {
+            throw new IllegalArgumentException("title must not be empty");
+        }
+        return bookRepository.findByTitleContainingIgnoreCase(title.trim());
+    }
 }
