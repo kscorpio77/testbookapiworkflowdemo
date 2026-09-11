@@ -32,6 +32,7 @@ public class BookController {
     // Create or update
     @PostMapping
     public ResponseEntity<Book> createBook(@RequestBody @jakarta.validation.Valid Book book) {
+        //I love github actions only when someone else does the demo. I don't do hands on.
         Book savedBook = bookService.saveBook(book);
         return ResponseEntity.ok(savedBook);
     }
