@@ -1,0 +1,38 @@
+name: "02 - CI/CD - Docker Build and Push"
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-test-docker:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+
+      - name: Run Unit and Integration Tests
+        run: mvn clean verify
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+
+      - name: Build Docker Image
+        run: |
+          docker build \
+          -t ${{ secrets.DOCKER_USERNAME }}/testbook-api:latest .
+
+      - name: Push Docker Image
+        run: |
+          docker push \
+          ${{ secrets.DOCKER_USERNAME }}/testbook-api:latest
