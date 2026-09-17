@@ -1,0 +1,172 @@
+name: "02 - Build and Push Docker Image to ECR"
+
+# ==========================================================
+# TRIGGER
+# ==========================================================
+# Manual trigger for classroom demonstration.
+#
+# GitHub -> Actions
+#        -> 02 - Build and Push Docker Image to ECR
+#        -> Run workflow
+# ==========================================================
+
+on:
+  workflow_dispatch:
+
+
+# ==========================================================
+# PERMISSIONS
+# ==========================================================
+# id-token: write
+#   Required for GitHub OIDC authentication with AWS.
+#
+# contents: read
+#   Required to checkout/read the GitHub repository.
+# ==========================================================
+
+permissions:
+  id-token: write
+  contents: read
+
+
+# ==========================================================
+# GLOBAL VARIABLES
+# ==========================================================
+
+env:
+
+  # Your ECR repository is in N. Virginia
+  AWS_REGION: us-east-1
+
+  # Name of your Amazon ECR repository
+  ECR_REPOSITORY: testbook-api
+
+
+jobs:
+
+  build-and-push:
+
+    name: Build Docker Image and Push to Amazon ECR
+
+    # GitHub creates a temporary Ubuntu runner.
+    # Docker is already available on this runner.
+    runs-on: ubuntu-latest
+
+
+    steps:
+
+      # ====================================================
+      # STEP 1 - CHECKOUT SOURCE CODE
+      # ====================================================
+
+      - name: Checkout source code
+        uses: actions/checkout@v6
+
+
+      # ====================================================
+      # STEP 2 - AUTHENTICATE GITHUB WITH AWS
+      # ====================================================
+      #
+      # GitHub Actions uses OIDC to assume this IAM role.
+      #
+      # NO AWS username/password required.
+      # NO AWS access key required.
+      # NO AWS secret access key required.
+      #
+      # ====================================================
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6.3.0
+        with:
+          role-to-assume: arn:aws:iam::316255801172:role/GitHubActionsECRRole
+          aws-region: ${{ env.AWS_REGION }}
+
+
+      # ====================================================
+      # STEP 3 - LOGIN TO AMAZON ECR
+      # ====================================================
+      #
+      # Uses the temporary AWS credentials obtained by
+      # assuming GitHubActionsECRRole.
+      #
+      # ====================================================
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+
+      # ====================================================
+      # STEP 4 - BUILD DOCKER IMAGE
+      # ====================================================
+      #
+      # Dockerfile is expected to be in the root directory
+      # of the GitHub repository.
+      #
+      # Two tags are created:
+      #
+      #   1. latest
+      #   2. GitHub commit SHA
+      #
+      # Example:
+      #
+      # 316255801172.dkr.ecr.us-east-1.amazonaws.com/
+      # testbook-api:latest
+      #
+      # ====================================================
+
+      - name: Build Docker image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+
+        run: |
+          echo "Building Docker image..."
+
+          docker build \
+            -t $ECR_REGISTRY/$ECR_REPOSITORY:latest \
+            -t $ECR_REGISTRY/$ECR_REPOSITORY:${{ github.sha }} \
+            .
+
+
+      # ====================================================
+      # STEP 5 - PUSH DOCKER IMAGE TO AMAZON ECR
+      # ====================================================
+
+      - name: Push Docker image to Amazon ECR
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+
+        run: |
+          echo "Pushing Docker image to Amazon ECR..."
+
+          docker push \
+            $ECR_REGISTRY/$ECR_REPOSITORY:latest
+
+          docker push \
+            $ECR_REGISTRY/$ECR_REPOSITORY:${{ github.sha }}
+
+
+      # ====================================================
+      # STEP 6 - DISPLAY PUSHED IMAGE DETAILS
+      # ====================================================
+
+      - name: Display pushed image details
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+
+        run: |
+          echo "=============================================="
+          echo "Docker image successfully pushed to ECR"
+          echo "=============================================="
+
+          echo ""
+          echo "ECR Repository:"
+          echo "$ECR_REGISTRY/$ECR_REPOSITORY"
+
+          echo ""
+          echo "Latest image:"
+          echo "$ECR_REGISTRY/$ECR_REPOSITORY:latest"
+
+          echo ""
+          echo "Commit-specific image:"
+          echo "$ECR_REGISTRY/$ECR_REPOSITORY:${{ github.sha }}"
