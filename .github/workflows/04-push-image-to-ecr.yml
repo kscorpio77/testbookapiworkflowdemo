@@ -11,8 +11,10 @@ name: "02 - Build and Push Docker Image to ECR"
 # ==========================================================
 
 on:
+  push:
+    branches:
+      - main
   workflow_dispatch:
-
 
 # ==========================================================
 # PERMISSIONS
