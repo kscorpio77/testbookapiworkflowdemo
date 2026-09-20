@@ -37,10 +37,10 @@ permissions:
 env:
 
   # Your ECR repository is in N. Virginia
-  AWS_REGION: us-east-1
+  AWS_REGION: eu-north-1
 
   # Name of your Amazon ECR repository
-  ECR_REPOSITORY: testbook-api
+  ECR_REPOSITORY: mybookapi
 
 
 jobs:
@@ -79,7 +79,7 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v6.3.0
         with:
-          role-to-assume: arn:aws:iam::316255801172:role/GitHubActionsECRRole
+          role-to-assume: arn:aws:iam::316255801172:role/AIECRROLE
           aws-region: ${{ env.AWS_REGION }}
 
 
