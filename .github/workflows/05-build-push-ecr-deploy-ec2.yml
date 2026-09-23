@@ -1,0 +1,347 @@
+# ============================================================
+# WORKFLOW:
+# Build Spring Boot application
+# Build Docker image
+# Push Docker image to Amazon ECR
+# Deploy latest image to Amazon EC2
+# ============================================================
+
+name: "03 - Build, Push to ECR and Deploy to EC2"
+
+# ------------------------------------------------------------
+# 1. WHEN SHOULD THIS WORKFLOW RUN?
+# ------------------------------------------------------------
+# It runs:
+#   1. Automatically whenever code is pushed to main
+#   2. Manually from GitHub Actions using "Run workflow"
+# ------------------------------------------------------------
+
+on:
+  push:
+    branches:
+      - main
+
+  workflow_dispatch:
+
+
+# ------------------------------------------------------------
+# 2. PERMISSIONS REQUIRED FOR OIDC
+# ------------------------------------------------------------
+# id-token: write
+#   Allows GitHub to request a temporary AWS identity token.
+#
+# contents: read
+#   Allows GitHub Actions to checkout/read the repository.
+# ------------------------------------------------------------
+
+permissions:
+  id-token: write
+  contents: read
+
+
+# ------------------------------------------------------------
+# 3. COMMON ENVIRONMENT VARIABLES
+# ------------------------------------------------------------
+
+env:
+
+  # AWS region where your ECR repository exists
+  AWS_REGION: eu-north-1
+
+  # Name of your ECR repository
+  ECR_REPOSITORY: mybookapi
+
+  # Name we will give the Docker container on EC2
+  CONTAINER_NAME: testbook-api
+
+  # Port exposed by the application
+  APP_PORT: 8080
+
+
+# ============================================================
+# JOB 1
+# BUILD APPLICATION + BUILD DOCKER IMAGE + PUSH TO ECR
+# ============================================================
+
+jobs:
+
+  build-and-push:
+
+    name: Build and Push Docker Image to ECR
+
+    runs-on: ubuntu-latest
+
+    outputs:
+
+      # We pass the image name to the deployment job
+      image: ${{ steps.build-image.outputs.image }}
+
+    steps:
+
+      # --------------------------------------------------------
+      # STEP 1 - DOWNLOAD SOURCE CODE
+      # --------------------------------------------------------
+
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+
+      # --------------------------------------------------------
+      # STEP 2 - INSTALL JAVA
+      # --------------------------------------------------------
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+
+
+      # --------------------------------------------------------
+      # STEP 3 - BUILD SPRING BOOT APPLICATION
+      # --------------------------------------------------------
+      # This creates the JAR file inside target/
+      # --------------------------------------------------------
+
+      - name: Build application using Maven
+        run: mvn clean package
+
+
+      # --------------------------------------------------------
+      # STEP 4 - CONNECT GITHUB ACTIONS TO AWS
+      # --------------------------------------------------------
+      #
+      # No permanent AWS username/password is required.
+      #
+      # GitHub gets a temporary token.
+      # AWS checks the GitHub identity.
+      # AWS then allows GitHub to assume this IAM role.
+      #
+      # Replace the ARN below if your current role ARN differs.
+      # --------------------------------------------------------
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+
+          role-to-assume: arn:aws:iam::316255801172:role/GitHubActionsECRRole
+
+          aws-region: ${{ env.AWS_REGION }}
+
+
+      # --------------------------------------------------------
+      # STEP 5 - LOGIN TO AMAZON ECR
+      # --------------------------------------------------------
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+
+      # --------------------------------------------------------
+      # STEP 6 - BUILD DOCKER IMAGE
+      # --------------------------------------------------------
+      #
+      # We create TWO tags:
+      #
+      # 1. Git commit SHA
+      #    Example:
+      #    mybookapi:a84e93....
+      #
+      # 2. latest
+      #
+      # SHA is useful because every deployment can be identified.
+      # latest makes the EC2 demo easier.
+      # --------------------------------------------------------
+
+      - name: Build and Push Docker Image
+        id: build-image
+
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+
+        run: |
+
+          echo "Building Docker image..."
+
+          docker build \
+            -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
+            -t $ECR_REGISTRY/$ECR_REPOSITORY:latest \
+            .
+
+          echo "Pushing Docker image with commit tag..."
+
+          docker push \
+            $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+
+          echo "Pushing Docker image with latest tag..."
+
+          docker push \
+            $ECR_REGISTRY/$ECR_REPOSITORY:latest
+
+          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" \
+            >> $GITHUB_OUTPUT
+  
+
+  # ============================================================
+  # JOB 2
+  # DEPLOY DOCKER IMAGE TO EC2
+  # ============================================================
+
+  deploy-to-ec2:
+
+    name: Deploy Docker Image to EC2
+
+    # Do NOT deploy if build-and-push failed
+    needs: build-and-push
+
+    runs-on: ubuntu-latest
+
+
+    steps:
+
+      # --------------------------------------------------------
+      # STEP 1 - CONNECT TO EC2 USING SSH
+      # --------------------------------------------------------
+      #
+      # We need three GitHub Secrets:
+      #
+      # EC2_HOST
+      # EC2_USERNAME
+      # EC2_SSH_KEY
+      #
+      # Example:
+      #
+      # EC2_HOST
+      # 13.xx.xx.xx
+      #
+      # EC2_USERNAME
+      # ubuntu
+      #
+      # EC2_SSH_KEY
+      # Complete contents of your .pem file
+      #
+      # --------------------------------------------------------
+
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v1
+
+        with:
+
+          host: ${{ secrets.EC2_HOST }}
+
+          username: ${{ secrets.EC2_USERNAME }}
+
+          key: ${{ secrets.EC2_SSH_KEY }}
+
+          script: |
+
+            echo "=========================================="
+            echo "Starting deployment..."
+            echo "=========================================="
+
+
+            # --------------------------------------------------
+            # AWS / ECR CONFIGURATION
+            # --------------------------------------------------
+
+            AWS_REGION="eu-north-1"
+
+            AWS_ACCOUNT_ID="316255801172"
+
+            ECR_REPOSITORY="mybookapi"
+
+            ECR_REGISTRY="$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com"
+
+            IMAGE="$ECR_REGISTRY/$ECR_REPOSITORY:latest"
+
+            CONTAINER_NAME="testbook-api"
+
+
+            # --------------------------------------------------
+            # LOGIN EC2 MACHINE TO AMAZON ECR
+            # --------------------------------------------------
+
+            echo "Logging EC2 into Amazon ECR..."
+
+            aws ecr get-login-password \
+              --region $AWS_REGION \
+            | docker login \
+              --username AWS \
+              --password-stdin $ECR_REGISTRY
+
+
+            # --------------------------------------------------
+            # DOWNLOAD LATEST IMAGE
+            # --------------------------------------------------
+
+            echo "Pulling latest Docker image..."
+
+            docker pull $IMAGE
+
+
+            # --------------------------------------------------
+            # STOP EXISTING CONTAINER
+            # --------------------------------------------------
+            #
+            # "|| true" means:
+            # Don't fail if the container doesn't exist.
+            #
+            # This is useful during the first deployment.
+            # --------------------------------------------------
+
+            echo "Stopping old container..."
+
+            docker stop $CONTAINER_NAME || true
+
+
+            # --------------------------------------------------
+            # REMOVE EXISTING CONTAINER
+            # --------------------------------------------------
+
+            echo "Removing old container..."
+
+            docker rm $CONTAINER_NAME || true
+
+
+            # --------------------------------------------------
+            # START NEW CONTAINER
+            # --------------------------------------------------
+
+            echo "Starting new container..."
+
+            docker run \
+              -d \
+              --name $CONTAINER_NAME \
+              --restart unless-stopped \
+              -p 8080:8080 \
+              $IMAGE
+
+
+            # --------------------------------------------------
+            # SHOW RUNNING CONTAINERS
+            # --------------------------------------------------
+
+            echo "Current running containers:"
+
+            docker ps
+
+
+            # --------------------------------------------------
+            # SHOW APPLICATION LOGS
+            # --------------------------------------------------
+
+            echo "Application logs:"
+
+            sleep 10
+
+            docker logs \
+              --tail 50 \
+              $CONTAINER_NAME
+
+
+            echo "=========================================="
+            echo "Deployment completed successfully!"
+            echo "=========================================="
