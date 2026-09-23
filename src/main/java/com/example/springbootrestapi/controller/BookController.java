@@ -21,7 +21,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/books")
 @Validated
-/** Controller **/
+/** Controller class **/
 public class BookController{
 
     private static final Logger logger = LoggerFactory.getLogger(BookController.class);
