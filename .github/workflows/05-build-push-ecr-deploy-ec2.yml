@@ -6,7 +6,7 @@
 # Deploy latest image to Amazon EC2
 # ============================================================
 
-name: "03 - Build, Push to ECR and Deploy to EC2"
+name: "05 - Build, Push to ECR and Deploy to EC2 for complete demo"
 
 # ------------------------------------------------------------
 # 1. WHEN SHOULD THIS WORKFLOW RUN?
