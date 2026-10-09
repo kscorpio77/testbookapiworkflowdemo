@@ -32,7 +32,9 @@ public class BookController {
     // Create or update the book
     @PostMapping
     public ResponseEntity<Book> createBook(@RequestBody @jakarta.validation.Valid Book book) {
-        Book savedBook = bookService.saveBook(book);
+        Book savedBook = null;
+        savedBook = bookService.saveBook(book);
+        System.out.println("My code is working fine. Now I can go on a holiday");
         return ResponseEntity.ok(savedBook);
     }
 
